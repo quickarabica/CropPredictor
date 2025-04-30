@@ -61,7 +61,7 @@ def main():
         elif model_choice == "Quantum K-Nearest Neighbour":
             prediction = predict_qknn(features, vqc_model, vqc_scaler, vqc_class_names)
         
-        st.success(f"**The predicted according to your inputs is: ** {prediction}")
+        st.success(f"**The predicted crop according to your inputs is: ** {prediction}")
 
         # Display crop image
         crop_image = load_crop_image(prediction)
