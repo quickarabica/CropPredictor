@@ -137,7 +137,7 @@ features = soil_features + weather_features
 
 # Function to load crop image
 def load_crop_image(crop_name):
-    img_path = rf"C:\Users\priya\Desktop\CropPredictor\assests\{crop_name.lower()}.jpg"
+    img_path = rf"CropPredictor\assests\{crop_name.lower()}.jpg"
     if os.path.exists(img_path):
         return Image.open(img_path)
     else:
