@@ -1,9 +1,15 @@
 import numpy as np
 import pickle
+import os
 from qiskit import QuantumCircuit, transpile
 from qiskit_aer import AerSimulator
 
-# Amplitude encoding for quantum state preparation
+from collections import Counter
+from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import LabelEncoder
+
+# ---- Utility Functions ----
+
 def amplitude_encode(features):
     d = len(features)
     n_qubits = int(np.ceil(np.log2(d)))
@@ -13,26 +19,21 @@ def amplitude_encode(features):
     norm = np.linalg.norm(vec)
     return vec / norm if norm != 0 else vec
 
-# Prepare quantum state
 def build_state_prep(vec, n_qubits):
     qc = QuantumCircuit(n_qubits)
     qc.initialize(vec, range(n_qubits))
     return qc
 
-# Quantum similarity using the swap test
 def swap_test(vec1, vec2, shots=1024):
     n_qubits = int(np.log2(len(vec1)))
     qc = QuantumCircuit(1 + 2 * n_qubits, 1)
     qc.h(0)
     qc.compose(build_state_prep(vec1, n_qubits), qubits=range(1, 1 + n_qubits), inplace=True)
     qc.compose(build_state_prep(vec2, n_qubits), qubits=range(1 + n_qubits, 1 + 2 * n_qubits), inplace=True)
-    
     for i in range(n_qubits):
         qc.cswap(0, i + 1, i + 1 + n_qubits)
-
     qc.h(0)
     qc.measure(0, 0)
-
     simulator = AerSimulator()
     tqc = transpile(qc, simulator)
     job = simulator.run(tqc, shots=shots)
@@ -42,22 +43,58 @@ def swap_test(vec1, vec2, shots=1024):
     fidelity = 2 * prob_0 - 1
     return fidelity
 
-# Load QkNN model
-def load_qknn_model(model_path="qknn_model.pkl"):
-    with open(model_path, "rb") as f:
-        model = pickle.load(f)
-    return model["train_vecs"], model["train_labels"]
+# ---- Load & Predict Functions ----
 
-# QkNN Prediction
-def predict_qknn(X_input, train_vecs, train_labels, k=3):
-    X_encoded = [amplitude_encode(x) for x in X_input]
-    predictions = []
+def load_qknn_model(filepath='qknn/quantum_knn_model1.pkl'):
+    """
+    Load the QKNN model from a single pickle file.
+    
+    Returns:
+        model: List of (quantum_state_vector, label_index)
+        scaler: StandardScaler object
+        class_names: List of class names
+    """
+    if not os.path.exists(filepath):
+        raise FileNotFoundError(f"Model file '{filepath}' not found.")
 
-    for tvec in X_encoded:
-        sims = [swap_test(tvec, trvec) for trvec in train_vecs]
-        knn_indices = np.argsort(sims)[-k:]
-        knn_labels = [train_labels[i] for i in knn_indices]
-        pred = max(set(knn_labels), key=knn_labels.count)
-        predictions.append(pred)
+    with open(filepath, 'rb') as f:
+        data = pickle.load(f)
 
-    return predictions
+    train_states = data['train_states']
+    train_labels = data['train_labels']
+    scaler = data['scaler']
+    class_names = data['class_names']
+
+    model = list(zip(train_states, train_labels))
+    return model, scaler, class_names
+
+
+def predict_qknn(input_data, model, scaler, class_names, k=5):
+    """
+    Predict the class for a given input using Quantum k-NN.
+    
+    Args:
+        input_data: Raw feature vector (not scaled)
+        model: List of (quantum_state_vector, label_index)
+        scaler: StandardScaler used for training
+        class_names: List of class names
+        k: Number of neighbors to consider
+    
+    Returns:
+        str: Predicted class name
+    """
+    # Preprocess input
+    scaled_input = scaler.transform([input_data])[0]
+    vec_test = amplitude_encode(scaled_input)
+
+    # Compute swap test fidelity-based distances
+    fidelities = [swap_test(vec_test, vec_train) for vec_train, _ in model]
+    distances = [1 - f for f in fidelities]
+
+    # Find k nearest neighbors
+    nn_idx = np.argsort(distances)[:int(k)]
+    nearest_labels = [model[i][1] for i in nn_idx]
+
+    # Return most common class name
+    most_common_label = Counter(nearest_labels).most_common(1)[0][0]
+    return class_names[most_common_label]
