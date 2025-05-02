@@ -148,11 +148,8 @@ def load_crop_image(crop_name):
 # Prediction button
 def main():
     model_choice = st.session_state.model_choice
-    if "show_popup" not in st.session_state:
-        st.session_state.show_popup = False
-
     st.markdown('<div class="predict-button">', unsafe_allow_html=True)
-
+    
     if st.button("Predict Crop 🚀"):
         with st.spinner("Quantum models are calculating the best crop for you..."):
             if model_choice == "Variational Quantum Classification":
@@ -163,68 +160,41 @@ def main():
             elif model_choice == "Quantum K-Nearest Neighbour":
                 prediction = predict_qknn(features, qknn_model, qknn_scaler, qknn_label_encoder)
 
-            # Store prediction in session state
-            st.session_state.prediction = prediction
-            st.session_state.show_popup = True
+            # Display Input Summary
+            st.markdown("### 🌾 Input Parameters Summary")
+            input_labels = ["Nitrogen", "Phosphorus", "Potassium", "Temperature (°C)", "Humidity (%)", "pH", "Rainfall (mm)"]
+            for label, value in zip(input_labels, features):
+                st.write(f"**{label}:** {value}")
 
-    if st.session_state.show_popup:
-        # Simulated popup modal
-        st.markdown("""
-            <style>
-            .popup-container {
-                position: fixed;
-                top: 10%;
-                left: 50%;
-                transform: translateX(-50%);
-                background-color: #f9f9f9;
-                border: 2px solid #34a853;
-                border-radius: 10px;
-                z-index: 9999;
-                width: 500px;
-                padding: 20px;
-                box-shadow: 0px 4px 12px rgba(0,0,0,0.2);
-            }
-            .popup-header {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                font-size: 20px;
-                font-weight: bold;
-                margin-bottom: 15px;
-            }
-            .close-button {
-                cursor: pointer;
-                font-size: 24px;
-                color: red;
-            }
-            </style>
-            <div class="popup-container">
-                <div class="popup-header">
-                    🧠 Crop Prediction Result
-                    <span class="close-button" onclick="window.location.reload();">×</span>
+            # Display Prediction Result
+            st.markdown("### 🤖 Prediction Result")
+            st.success(f"Using **{model_choice}**, the predicted suitable crop is:")
+            st.markdown(
+                f"""
+                <div style='
+                    background-color: #e6f4ea;
+                    padding: 20px;
+                    border-left: 6px solid #34a853;
+                    border-radius: 5px;
+                    text-align: center;
+                    font-size: 24px;
+                    font-weight: bold;
+                    color: #0b6623;'>
+                    🌱 {prediction.upper()} 🌱
                 </div>
-        """, unsafe_allow_html=True)
+                """,
+                unsafe_allow_html=True
+            )
 
-        # Input summary
-        st.markdown("**📥 Input Features:**")
-        input_labels = ["Nitrogen", "Phosphorus", "Potassium", "Temperature (°C)", "Humidity (%)", "pH", "Rainfall (mm)"]
-        for label, value in zip(input_labels, features):
-            st.markdown(f"- **{label}**: {value}")
+            # Display Crop Image
+            crop_image = load_crop_image(prediction)
+            if crop_image:
+                st.markdown("<div style='text-align: center;'>", unsafe_allow_html=True)
+                st.image(crop_image, caption=f"Predicted Crop: {prediction.upper()}", use_container_width=True)
+                st.markdown("</div>", unsafe_allow_html=True)
+            else:
+                st.warning(f"No image available for this crop: {prediction}")
 
-        st.markdown("**🌱 Predicted Crop:**")
-        st.markdown(
-            f"<div style='text-align:center; font-size: 28px; font-weight: bold; color: #0b6623;'>{st.session_state.prediction.upper()}</div>",
-            unsafe_allow_html=True
-        )
-
-        crop_image = load_crop_image(st.session_state.prediction)
-        if crop_image:
-            st.image(crop_image, caption=f"Predicted Crop: {st.session_state.prediction.upper()}", use_container_width=True)
-        else:
-            st.warning(f"No image available for this crop: {st.session_state.prediction}")
-
-        # Close div
-        st.markdown("</div>", unsafe_allow_html=True)
 
 st.markdown('</div>', unsafe_allow_html=True)
 
