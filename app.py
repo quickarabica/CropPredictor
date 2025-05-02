@@ -149,6 +149,7 @@ def load_crop_image(crop_name):
 def main():
     model_choice = st.session_state.model_choice
     st.markdown('<div class="predict-button">', unsafe_allow_html=True)
+    
     if st.button("Predict Crop 🚀"):
         with st.spinner("Quantum models are calculating the best crop for you..."):
             if model_choice == "Variational Quantum Classification":
@@ -158,10 +159,34 @@ def main():
                 prediction = predict_qnn(qnn_model, qnn_scaler, qnn_label_encoder, arr)[0]
             elif model_choice == "Quantum K-Nearest Neighbour":
                 prediction = predict_qknn(features, qknn_model, qknn_scaler, qknn_label_encoder)
-            st.subheader(f"{model_choice}'s Prediction Result")
-            st.success(f"The predicted crop according to your input is **{prediction.upper()}**")
 
-            # Display crop image
+            # Display Input Summary
+            st.markdown("### 🌾 Input Parameters Summary")
+            input_labels = ["Nitrogen", "Phosphorus", "Potassium", "Temperature (°C)", "Humidity (%)", "pH", "Rainfall (mm)"]
+            for label, value in zip(input_labels, features):
+                st.write(f"**{label}:** {value}")
+
+            # Display Prediction Result
+            st.markdown("### 🤖 Prediction Result")
+            st.success(f"Using **{model_choice}**, the predicted suitable crop is:")
+            st.markdown(
+                f"""
+                <div style='
+                    background-color: #e6f4ea;
+                    padding: 20px;
+                    border-left: 6px solid #34a853;
+                    border-radius: 5px;
+                    text-align: center;
+                    font-size: 24px;
+                    font-weight: bold;
+                    color: #0b6623;'>
+                    🌱 {prediction.upper()} 🌱
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+
+            # Display Crop Image
             crop_image = load_crop_image(prediction)
             if crop_image:
                 st.markdown("<div style='text-align: center;'>", unsafe_allow_html=True)
@@ -170,7 +195,6 @@ def main():
             else:
                 st.warning(f"No image available for this crop: {prediction}")
 
-    
 
 st.markdown('</div>', unsafe_allow_html=True)
 
