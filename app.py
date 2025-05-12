@@ -105,29 +105,30 @@ st.success(f"Selected Model: **{st.session_state.model_choice}**")
 
 st.markdown('<div class="section-header">🌍 Soil Features: </div>', unsafe_allow_html=True)
 def soil_input():
-    col1, col2 = st.columns(2)
+    col1, col2, col3 = st.columns(3)
     with col1:
-        N = st.number_input("Nitrogen (N) [kg/ha]", value=90.0, min_value=0.0)
+        N = st.number_input("Nitrogen (N)", value=90.0, min_value=0.0)
     with col2:
-        P = st.number_input("Phosphorus (P) [kg/ha]", value=42.0, min_value=0.0)
-    col1, col2 = st.columns(2)
-    with col1:
-        K = st.number_input("Potassium (K) [kg/ha]", value=43.0, min_value=0.0)
-    with col2:
-        ph = st.number_input("Soil pH Value", value=6.5, min_value=0.0, max_value=14.0)
-    return [N, P, ph, K]
+        P = st.number_input("Phosphorus (P)", value=42.0, min_value=0.0)
+    with col3:
+        K = st.number_input("Potassium (K)", value=43.0, min_value=0.0)
+    return [N, P, K]
+
 soil_features = soil_input()
 
 st.markdown('<div class="section-header">🌤 Weather Features: </div>', unsafe_allow_html=True)
 def weather_input():
-    col1, col2, col3= st.columns(3)
+    col1, col2 = st.columns(2)
     with col1:
         temperature = st.number_input("Temperature (°C)", value=20.0, min_value=-30.0, max_value=60.0)
     with col2:
         humidity = st.number_input("Humidity (%)", value=82.0, min_value=0.0, max_value=100.0)
-    with col3:
+    col1, col2 = st.columns(2)
+    with col1:
+        ph = st.number_input("Soil pH Value", value=6.5, min_value=0.0, max_value=14.0)
+    with col2:
         rainfall = st.number_input("Rainfall (mm)", value=202.9, min_value=0.0)
-    return [temperature, humidity, rainfall]
+    return [temperature, humidity, ph, rainfall]
 
 weather_features = weather_input()
 
